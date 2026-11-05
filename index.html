@@ -51,6 +51,12 @@
             outline: none;
             background-color: #fff;
         }
+        .error-msg {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
         .camera-section {
             text-align: center;
             margin-top: 20px;
@@ -143,6 +149,7 @@
         <div class="form-group">
             <label for="fileNumber">رقم الطبلة:</label>
             <input type="text" id="fileNumber" required placeholder="رقم طبلة المريض">
+            <div id="fileNumberError" class="error-msg">رقم الطبلة هذا مسجل مسبقاً في النظام!</div>
         </div>
 
         <div class="form-group">
@@ -166,12 +173,12 @@
         </div>
 
         <button type="submit" class="btn" style="margin-top: 20px;">حفظ وإرسال البيانات</button>
-        <div id="loading">جاري إرسال البيانات وحفظ الصورة، يرجى الانتظار...</div>
+        <div id="loading">جاري فحص البيانات وإرسالها، يرجى الانتظار...</div>
     </form>
 </div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbw303ip1IJbD_tEIuWRJotrFRY1w_veoIla8_glUgFd-hDJrkt1vYtgri7tbLTqrJiJ8Q/exec'; // ضع رابط سكربت قوقل هنا
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxktTx_NV4sBfO5DHAKpJKLQABPIQWnNxc2LL76vkTLPDQtc0vgyJ8ISHKRVUqyhySLSQ/exec'; // ضع رابط سكربت قوقل هنا
 
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -179,13 +186,21 @@
     const startCameraBtn = document.getElementById('startCamera');
     const captureBtn = document.getElementById('captureBtn');
     const imageDataInput = document.getElementById('imageData');
+    const fileNumberInput = document.getElementById('fileNumber');
+    const fileNumberError = document.getElementById('fileNumberError');
     let streamInstance = null;
+
+    // إخفاء رسالة الخطأ عند كتابة رقم جديد
+    fileNumberInput.addEventListener('input', () => {
+        fileNumberError.style.display = 'none';
+        fileNumberInput.style.borderColor = '#ccc';
+    });
 
     // تشغيل الكاميرا المباشرة من الهاتف
     startCameraBtn.addEventListener('click', async () => {
         try {
             streamInstance = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' }, // الكاميرا الخلفية افتراضياً
+                video: { facingMode: 'environment' }, 
                 audio: false 
             });
             video.srcObject = streamInstance;
@@ -210,7 +225,6 @@
         preview.src = dataURL;
         preview.style.display = 'block';
 
-        // إيقاف الكاميرا بعد التقاط الصورة
         if (streamInstance) {
             streamInstance.getTracks().forEach(track => track.stop());
         }
@@ -220,7 +234,7 @@
         startCameraBtn.textContent = 'إعادة التقاط الصورة';
     });
 
-    // إرسال البيانات إلى Google Apps Script
+    // إرسال البيانات والتحقق من التكرار
     const form = document.getElementById('patientForm');
     form.addEventListener('submit', e => {
         e.preventDefault();
@@ -238,7 +252,7 @@
             gender: document.getElementById('gender').value,
             age: document.getElementById('age').value,
             address: document.getElementById('address').value,
-            fileNumber: document.getElementById('fileNumber').value,
+            fileNumber: fileNumberInput.value,
             phone: document.getElementById('phone').value,
             admissionDate: document.getElementById('admissionDate').value,
             image: imageDataInput.value
@@ -251,14 +265,25 @@
         .then(response => response.json())
         .then(response => {
             document.getElementById('loading').style.display = 'none';
-            alert('تم حفظ البيانات بنجاح!');
-            form.reset();
-            preview.style.display = 'none';
-            imageDataInput.value = '';
+            
+            if (response.result === 'duplicate') {
+                fileNumberError.style.display = 'block';
+                fileNumberInput.style.borderColor = '#dc3545';
+                fileNumberInput.focus();
+            } else if (response.result === 'success') {
+                alert('تم حفظ البيانات بنجاح!');
+                form.reset();
+                preview.style.display = 'none';
+                imageDataInput.value = '';
+                fileNumberError.style.display = 'none';
+                fileNumberInput.style.borderColor = '#ccc';
+            } else {
+                alert('حدث خطأ غير متوقع.');
+            }
         })
         .catch(error => {
             document.getElementById('loading').style.display = 'none';
-            alert('حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.');
+            alert('حدث خطأ أثناء الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
             console.error('Error!', error.message);
         });
     });
