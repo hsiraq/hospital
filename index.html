@@ -3,26 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نموذج تقديم سلفة مصرف الرافدين</title>
+    <title>استمارة المريض الراقد</title>
     <style>
-        body {
-            font-family: Tahoma, sans-serif;
-            background-color: #f4f7f6;
+        * {
+            box-sizing: border-box;
             margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f0f2f5;
+            color: #333;
             padding: 20px;
-            direction: rtl;
         }
         .container {
-            max-width: 500px;
+            max-width: 600px;
+            margin: 0 auto;
             background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            margin: auto;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         h2 {
-            color: #0056b3;
             text-align: center;
+            color: #0056b3;
+            margin-bottom: 20px;
         }
         .form-group {
             margin-bottom: 15px;
@@ -31,164 +36,232 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
+            color: #444;
         }
         input, select {
             width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
+            padding: 12px;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #fafafa;
         }
-        button {
+        input:focus, select:focus {
+            border-color: #0056b3;
+            outline: none;
+            background-color: #fff;
+        }
+        .camera-section {
+            text-align: center;
+            margin-top: 20px;
+            border: 2px dashed #0056b3;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8fbff;
+        }
+        video, canvas {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 8px;
+            display: none;
+            margin-top: 10px;
+        }
+        img#preview {
+            width: 100%;
+            max-height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            display: none;
+            margin-top: 10px;
+        }
+        .btn {
             background-color: #0056b3;
             color: white;
-            padding: 10px 15px;
             border: none;
-            border-radius: 4px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
             cursor: pointer;
             width: 100%;
-            font-size: 16px;
+            margin-top: 10px;
+            transition: background 0.3s;
         }
-        button:hover {
+        .btn:hover {
             background-color: #004085;
         }
-        
-        /* تنسيق حالة التحميل والرسائل */
-        .loading-screen {
+        .btn-capture {
+            background-color: #28a745;
+            margin-top: 5px;
+        }
+        .btn-capture:hover {
+            background-color: #218838;
+        }
+        #loading {
+            display: none;
             text-align: center;
-            padding: 20px;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0056b3;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 10px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .error { color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; margin-top: 10px; }
-        
-        /* إخفاء الاستمارة بالبداية */
-        #loanFormContainer {
-            display: none;
-        }
-        video {
-            width: 100%;
-            max-height: 150px;
-            background: #000;
-            margin-top: 10px;
-            border-radius: 4px;
-            display: none;
+            margin-top: 15px;
+            color: #0056b3;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>طلب سلفة (تجريبي)</h2>
+    <h2>استمارة دخول المريض الراقد</h2>
+    <form id="patientForm">
+        
+        <div class="form-group">
+            <label for="fullName">الاسم الثلاثي واللقب:</label>
+            <input type="text" id="fullName" required placeholder="أدخل الاسم الثلاثي">
+        </div>
 
-    <!-- شاشة التحقق الأولي (التحميل والموقع والكاميرا) -->
-    <div id="permissionScreen" class="loading-screen">
-        <div class="spinner"></div>
-        <p id="permissionStatus">جاري طلب التحقق من الموقع والكاميرا...</p>
-        <video id="videoElement" autoplay playsinline></video>
-        <div id="errorMsg" class="error" style="display: none;"></div>
-    </div>
+        <div class="form-group">
+            <label for="motherName">اسم الأم:</label>
+            <input type="text" id="motherName" required placeholder="أدخل اسم الأم الثلاثي">
+        </div>
 
-    <!-- استمارة إدخال المعلومات (تفتح بعد السماح) -->
-    <div id="loanFormContainer">
-        <form id="loanForm" onsubmit="submitForm(event)">
-            <div class="form-group">
-                <label for="fullName">الاسم الثلاثي:</label>
-                <input type="text" id="fullName" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="loanAmount">مبلغ السلفة:</label>
-                <select id="loanAmount">
-                    <option value="5000000">5 مليون دينار</option>
-                    <option value="10000000">10 مليون دينار</option>
-                </select>
-            </div>
+        <div class="form-group">
+            <label for="gender">الجنس:</label>
+            <select id="gender" required>
+                <option value="">اختر الجنس</option>
+                <option value="ذكر">ذكر</option>
+                <option value="أنثى">أنثى</option>
+            </select>
+        </div>
 
-            <button type="submit">إرسال الطلب النهائي</button>
-        </form>
-    </div>
+        <div class="form-group">
+            <label for="age">العمر:</label>
+            <input type="number" id="age" required placeholder="أدخل العمر بالسنوات">
+        </div>
+
+        <div class="form-group">
+            <label for="address">السكن (المحافظة / المنطقة):</label>
+            <input type="text" id="address" required placeholder="أدخل عنوان السكن">
+        </div>
+
+        <div class="form-group">
+            <label for="fileNumber">رقم الطبلة:</label>
+            <input type="text" id="fileNumber" required placeholder="رقم طبلة المريض">
+        </div>
+
+        <div class="form-group">
+            <label for="phone">رقم الهاتف:</label>
+            <input type="tel" id="phone" required placeholder="07xxxxxxxxx">
+        </div>
+
+        <div class="form-group">
+            <label for="admissionDate">تاريخ ودخول المريض:</label>
+            <input type="date" id="admissionDate" required>
+        </div>
+
+        <div class="camera-section">
+            <label>صورة المريض / الحالة (من الهاتف):</label>
+            <button type="button" class="btn btn-capture" id="startCamera">فتح الكاميرا لالتقاط صورة</button>
+            <video id="video" autoplay playsinline></video>
+            <button type="button" class="btn" id="captureBtn" style="display:none;">التقاط الصورة</button>
+            <canvas id="canvas"></canvas>
+            <img id="preview" alt="معاينة الصورة">
+            <input type="hidden" id="imageData">
+        </div>
+
+        <button type="submit" class="btn" style="margin-top: 20px;">حفظ وإرسال البيانات</button>
+        <div id="loading">جاري إرسال البيانات وحفظ الصورة، يرجى الانتظار...</div>
+    </form>
 </div>
 
 <script>
-    // يبدأ التحقق تلقائياً فور فتح الصفحة
-    window.onload = function() {
-        checkLocationAndCamera();
-    };
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbw303ip1IJbD_tEIuWRJotrFRY1w_veoIla8_glUgFd-hDJrkt1vYtgri7tbLTqrJiJ8Q/exec'; // ضع رابط سكربت قوقل هنا
 
-    function checkLocationAndCamera() {
-        const statusText = document.getElementById('permissionStatus');
-        const errorDiv = document.getElementById('errorMsg');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const preview = document.getElementById('preview');
+    const startCameraBtn = document.getElementById('startCamera');
+    const captureBtn = document.getElementById('captureBtn');
+    const imageDataInput = document.getElementById('imageData');
+    let streamInstance = null;
 
-        // 1. طلب الموقع الجغرافي أولاً
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    console.log(`الموقع: خط عرض ${lat}, خط طول ${lon}`);
-                    
-                    statusText.innerText = 'تم التحقق من الموقع، جاري فتح الكاميرا...';
-                    requestCamera();
-                },
-                (error) => {
-                    showError('عذراً، يجب الموافقة على مشاركة الموقع الجغرافي للمتابعة.');
-                }
-            );
-        } else {
-            showError('متصفحك لا يدعم خاصية تحديد الموقع.');
-        }
-    }
-
-    function requestCamera() {
-        const statusText = document.getElementById('permissionStatus');
-        const video = document.getElementById('videoElement');
-
-        // 2. طلب الكاميرا ثانياً
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then((stream) => {
-                video.style.display = 'block';
-                video.srcObject = stream;
-                
-                statusText.innerText = 'تم التحقق بنجاح! جاري فتح الاستمارة...';
-                
-                // بعد ثانية واحدة من نجاح الأذونات، نخفي شاشة التحقق ونظهر الاستمارة
-                setTimeout(() => {
-                    document.getElementById('permissionScreen').style.display = 'none';
-                    document.getElementById('loanFormContainer').style.display = 'block';
-                }, 1500);
-            })
-            .catch((err) => {
-                showError('عذراً، يجب السماح بالوصول إلى الكاميرا للمتابعة.');
+    // تشغيل الكاميرا المباشرة من الهاتف
+    startCameraBtn.addEventListener('click', async () => {
+        try {
+            streamInstance = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' }, // الكاميرا الخلفية افتراضياً
+                audio: false 
             });
-    }
+            video.srcObject = streamInstance;
+            video.style.display = 'block';
+            captureBtn.style.display = 'block';
+            startCameraBtn.style.display = 'none';
+        } catch (err) {
+            alert('تعذر الوصول إلى كاميرا الهاتف. تأكد من إعطاء الصلاحيات.');
+            console.error(err);
+        }
+    });
 
-    function showError(message) {
-        const spinner = document.querySelector('.spinner');
-        const statusText = document.getElementById('permissionStatus');
-        const errorDiv = document.getElementById('errorMsg');
+    // التقاط الصورة من الفيديو
+    captureBtn.addEventListener('click', () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        spinner.style.display = 'none';
-        statusText.style.display = 'none';
-        errorDiv.style.display = 'block';
-        errorDiv.innerText = message;
-    }
+        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+        imageDataInput.value = dataURL;
+        preview.src = dataURL;
+        preview.style.display = 'block';
 
-    function submitForm(event) {
-        event.preventDefault();
-        alert('تم إرسال المعلومات والبيانات بنجاح!');
-    }
+        // إيقاف الكاميرا بعد التقاط الصورة
+        if (streamInstance) {
+            streamInstance.getTracks().forEach(track => track.stop());
+        }
+        video.style.display = 'none';
+        captureBtn.style.display = 'none';
+        startCameraBtn.style.display = 'block';
+        startCameraBtn.textContent = 'إعادة التقاط الصورة';
+    });
+
+    // إرسال البيانات إلى Google Apps Script
+    const form = document.getElementById('patientForm');
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        
+        if (!imageDataInput.value) {
+            alert('يرجى التقاط صورة المريض أولاً.');
+            return;
+        }
+
+        document.getElementById('loading').style.display = 'block';
+
+        const data = {
+            fullName: document.getElementById('fullName').value,
+            motherName: document.getElementById('motherName').value,
+            gender: document.getElementById('gender').value,
+            age: document.getElementById('age').value,
+            address: document.getElementById('address').value,
+            fileNumber: document.getElementById('fileNumber').value,
+            phone: document.getElementById('phone').value,
+            admissionDate: document.getElementById('admissionDate').value,
+            image: imageDataInput.value
+        };
+
+        fetch(scriptURL, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(response => {
+            document.getElementById('loading').style.display = 'none';
+            alert('تم حفظ البيانات بنجاح!');
+            form.reset();
+            preview.style.display = 'none';
+            imageDataInput.value = '';
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            alert('حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.');
+            console.error('Error!', error.message);
+        });
+    });
 </script>
 
 </body>
